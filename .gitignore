@@ -1,2 +1,4 @@
 .pio/
 .git-commit-hash
+.vscode
+.DS_Store
