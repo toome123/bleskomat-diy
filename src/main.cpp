@@ -18,6 +18,7 @@ void setup() {
 	billAcceptor::init();
 	button::init();
 	buttonDelay = config::getUnsignedInt("buttonDelay");
+	pinMode(25, OUTPUT);
 }
 
 void disinhibitAcceptors() {
@@ -55,9 +56,11 @@ void runAppLoop() {
 	coinAcceptor::loop();
 	billAcceptor::loop();
 	button::loop();
+	screen::loop();
 	const std::string currentScreen = screen::getCurrentScreen();
 	if (currentScreen == "") {
 		disinhibitAcceptors();
+		screen::turnOnScreenLight();
 		screen::showWelcomeScreen();
 	}
 	float accumulatedValue = 0;
@@ -68,6 +71,7 @@ void runAppLoop() {
 		currentScreen != "insertFiat" &&
 		currentScreen != "tradeComplete"
 	) {
+		screen::turnOnScreenLight();
 		screen::showInsertFiatScreen(accumulatedValue);
 		amountShown = accumulatedValue;
 	}
@@ -75,6 +79,7 @@ void runAppLoop() {
 		disinhibitAcceptors();
 	}else if (currentScreen == "insertFiat") {
 		if (button::isPressed()) {
+			screen::turnOnScreenLight();
 			if (accumulatedValue > 0) {
 				// Button pushed while insert fiat screen shown and accumulated value greater than 0.
 				// Create a withdraw request and render it as a QR code.
@@ -95,6 +100,7 @@ void runAppLoop() {
 			// Button not pressed.
 			// Ensure that the amount shown is correct.
 			if (amountShown != accumulatedValue) {
+				screen::turnOnScreenLight();
 				screen::showInsertFiatScreen(accumulatedValue);
 				amountShown = accumulatedValue;
 			}

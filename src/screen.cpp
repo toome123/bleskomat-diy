@@ -2,11 +2,14 @@
 
 namespace {
 	std::string currentScreen = "";
+	unsigned long screenLightMillisOn = 0;
 }
 
 namespace screen {
 
 	void init() {
+		pinMode(25, OUTPUT);
+		digitalWrite(25, HIGH);
 		screen_tft::init();
 	}
 
@@ -32,5 +35,16 @@ namespace screen {
 	void showCreditScreen() {
 		screen_tft::showCreditScreen();
 		currentScreen = "credit";
+	}
+
+	void loop(){
+		if(millis() - screenLightMillisOn > 10000){
+			digitalWrite(25, LOW);  
+		}
+	}
+
+	void turnOnScreenLight(){
+		digitalWrite(25, HIGH);
+		screenLightMillisOn = millis();
 	}
 }

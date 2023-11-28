@@ -12,6 +12,8 @@ namespace screen {
 	void showTradeCompleteScreen(const float &amount, const std::string &qrcodeData);
 	void showWelcomeScreen();
 	void showCreditScreen();
+	void loop();
+	void turnOnScreenLight();
 }
 
 #endif
