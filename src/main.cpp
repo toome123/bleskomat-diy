@@ -1,7 +1,9 @@
 #include "main.h"
 
 unsigned int buttonDelay;
-
+float amountShown = 0;
+unsigned long tradeCompleteTime = 0;
+unsigned long creditScreenShowTime = 0;
 void setup() {
 	Serial.begin(MONITOR_SPEED);
 	spiffs::init();
@@ -39,10 +41,8 @@ void inhibitAcceptors() {
 void resetAccumulatedValues() {
 	coinAcceptor::resetAccumulatedValue();
 	billAcceptor::resetAccumulatedValue();
+	amountShown = 0;
 }
-
-float amountShown = 0;
-unsigned long tradeCompleteTime = 0;
 
 void writeTradeCompleteLog(const float &amount, const std::string &signedUrl) {
 	std::string msg = "Trade completed:\n";
@@ -57,7 +57,8 @@ void runAppLoop() {
 	button::loop();
 	const std::string currentScreen = screen::getCurrentScreen();
 	if (currentScreen == "") {
-		screen::showInsertFiatScreen(0);
+		disinhibitAcceptors();
+		screen::showWelcomeScreen();
 	}
 	float accumulatedValue = 0;
 	accumulatedValue += coinAcceptor::getAccumulatedValue();
@@ -70,8 +71,9 @@ void runAppLoop() {
 		screen::showInsertFiatScreen(accumulatedValue);
 		amountShown = accumulatedValue;
 	}
-	if (currentScreen == "insertFiat") {
+	if(currentScreen == "welcome") {
 		disinhibitAcceptors();
+	}else if (currentScreen == "insertFiat") {
 		if (button::isPressed()) {
 			if (accumulatedValue > 0) {
 				// Button pushed while insert fiat screen shown and accumulated value greater than 0.
@@ -100,11 +102,18 @@ void runAppLoop() {
 	} else if (currentScreen == "tradeComplete") {
 		inhibitAcceptors();
 		if (button::isPressed() && millis() - tradeCompleteTime > buttonDelay) {
-			// Button pushed while showing the trade complete screen.
-			// Reset accumulated values.
+			creditScreenShowTime = millis();
 			resetAccumulatedValues();
-			amountShown = 0;
-			screen::showInsertFiatScreen(0);
+			screen::showCreditScreen();
+			logger::write("Screen cleared");
+		}else if(millis() - tradeCompleteTime > 10000){//TODO: Move to config
+			resetAccumulatedValues();
+			screen::showWelcomeScreen();
+			logger::write("Screen cleared");
+		}
+	} else if (currentScreen == "credit") {
+		if (millis() - creditScreenShowTime > 2000) {//TODO: move to config
+			screen::showWelcomeScreen();
 			logger::write("Screen cleared");
 		}
 	}

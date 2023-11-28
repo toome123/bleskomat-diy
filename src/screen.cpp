@@ -23,4 +23,14 @@ namespace screen {
 		screen_tft::showTradeCompleteScreen(amount, qrcodeData);
 		currentScreen = "tradeComplete";
 	}
+
+	void showWelcomeScreen() {
+		screen_tft::showWelcomeScreen();
+		currentScreen = "welcome";
+	}
+
+	void showCreditScreen() {
+		screen_tft::showCreditScreen();
+		currentScreen = "credit";
+	}
 }

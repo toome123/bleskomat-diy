@@ -1,6 +1,7 @@
 #include "screen/tft.h"
 
-namespace {
+namespace
+{
 
 	TFT_eSPI display = TFT_eSPI();
 	const auto bg_color = TFT_WHITE;
@@ -11,7 +12,8 @@ namespace {
 	const uint8_t margin_y = 12;
 	std::string current_screen = "";
 
-	struct BoundingBox {
+	struct BoundingBox
+	{
 		int16_t x = 0;
 		int16_t y = 0;
 		uint16_t w = 0;
@@ -19,8 +21,15 @@ namespace {
 	};
 
 	BoundingBox amount_text_bbox;
+	BoundingBox welcome_text_bbox;
+	BoundingBox to_text_bbox;
+	BoundingBox bitcoin_bar_text_bbox;
+	BoundingBox insertCoins_text_bbox;
+	BoundingBox press_btn_text_bbox;
+	BoundingBox to_withdraw_btn_text_bbox;
 
-	std::string getAmountFiatCurrencyString(const float &amount) {
+	std::string getAmountFiatCurrencyString(const float &amount)
+	{
 		return util::floatToStringWithPrecision(amount, config::getUnsignedShort("fiatPrecision")) + " " + config::getString("fiatCurrency");
 	}
 
@@ -28,9 +37,9 @@ namespace {
 		const std::string &t_text,
 		const int16_t &x,
 		const int16_t &y,
-		const bool &center = true
-	) {
-		const char* text = t_text.c_str();
+		const bool &center = true)
+	{
+		const char *text = t_text.c_str();
 		display.setTextColor(text_color);
 		display.setTextFont(text_font);
 		display.setTextSize(text_size);
@@ -38,7 +47,8 @@ namespace {
 		int16_t tbh = display.fontHeight(); // no need to multiply by text_size because TFT_eSPI does this automatically after setTextSize() is called
 		int16_t box_x = x;
 		int16_t box_y = y;
-		if (center) {
+		if (center)
+		{
 			box_x -= (tbw / 2);
 		}
 		int16_t cursor_x = box_x;
@@ -59,32 +69,38 @@ namespace {
 		const int16_t &y,
 		const uint16_t &max_w,
 		const uint16_t &max_h,
-		const bool &center = true
-	) {
+		const bool &center = true)
+	{
 		BoundingBox bbox;
-		try {
-			const char* data = t_data.c_str();
+		try
+		{
+			const char *data = t_data.c_str();
 			uint8_t version = 1;
-			while (version <= 40) {
+			while (version <= 40)
+			{
 				const uint16_t bufferSize = qrcode_getBufferSize(version);
 				QRCode qrcode;
 				uint8_t qrcodeData[bufferSize];
 				const int8_t result = qrcode_initText(&qrcode, qrcodeData, version, ECC_LOW, data);
-				if (result == 0) {
+				if (result == 0)
+				{
 					// QR encoding successful.
 					uint8_t scale = std::min(std::floor(max_w / qrcode.size), std::floor(max_h / qrcode.size));
 					uint16_t w = qrcode.size * scale;
 					uint16_t h = w;
 					int16_t box_x = x;
 					int16_t box_y = y;
-					if (center) {
+					if (center)
+					{
 						box_x -= (w / 2);
 					}
 					display.fillRect(box_x, box_y, w, h, bg_color);
-					for (uint8_t y = 0; y < qrcode.size; y++) {
-						for (uint8_t x = 0; x < qrcode.size; x++) {
-							auto color = qrcode_getModule(&qrcode, x, y) ? text_color: bg_color;
-							display.fillRect(box_x + scale*x, box_y + scale*y, scale, scale, color);
+					for (uint8_t y = 0; y < qrcode.size; y++)
+					{
+						for (uint8_t x = 0; x < qrcode.size; x++)
+						{
+							auto color = qrcode_getModule(&qrcode, x, y) ? text_color : bg_color;
+							display.fillRect(box_x + scale * x, box_y + scale * y, scale, scale, color);
 						}
 					}
 					bbox.x = box_x;
@@ -92,69 +108,130 @@ namespace {
 					bbox.w = w;
 					bbox.h = h;
 					break;
-				} else if (result == -2) {
+				}
+				else if (result == -2)
+				{
 					// Data was too long for the QR code version.
 					version++;
-				} else if (result == -1) {
+				}
+				else if (result == -1)
+				{
 					throw std::runtime_error("Render QR code failure: Unable to detect mode");
-				} else {
+				}
+				else
+				{
 					throw std::runtime_error("Render QR code failure: Unknown failure case");
 				}
 			}
-		} catch (const std::exception &e) {
+		}
+		catch (const std::exception &e)
+		{
 			std::cerr << e.what() << std::endl;
 		}
 		return bbox;
 	}
 
-	void clearScreen() {
+	void clearScreen()
+	{
 		display.fillScreen(bg_color);
 	}
 }
 
-namespace screen_tft {
+namespace screen_tft
+{
 
-	void init() {
+	void init()
+	{
 		logger::write("Initializing TFT display...");
 		display.begin();
 		display.setRotation(config::getUnsignedShort("tftRotation"));
 		clearScreen();
 	}
 
-	void showInsertFiatScreen(const float &amount) {
-		if (current_screen == "insertFiat") {
-			// Clear previous text by drawing a rectangle over it.
-			display.fillRect(
-				amount_text_bbox.x,
-				amount_text_bbox.y,
-				amount_text_bbox.w,
-				amount_text_bbox.h,
-				bg_color
-			);
-		} else if (current_screen == "tradeComplete") {
-			// Clear the whole screen.
-			clearScreen();
-		}
+	void showInsertFiatScreen(const float &amount)
+	{
+		
+		clearScreen();
+		
 		const std::string text = getAmountFiatCurrencyString(amount);
 		const int16_t center_x = display.width() / 2;
 		const int16_t text_x = center_x;
 		const int16_t text_y = margin_y;
-		amount_text_bbox = renderText(text, text_x, text_y, true/* center */);
+		amount_text_bbox = renderText(text, text_x, text_y, true /* center */);
+
+		const int16_t press_btn_x = center_x;
+		const int16_t press_btn_y = amount_text_bbox.y + amount_text_bbox.h + margin_y;
+		press_btn_text_bbox = renderText("Press the button", press_btn_x, press_btn_y, true /* center */);
+
+		const int16_t to_withdraw_btn_x = center_x;
+		const int16_t to_withdraw_btn_y = press_btn_text_bbox.y + press_btn_text_bbox.h + margin_y;
+		to_withdraw_btn_text_bbox = renderText("to withdraw", to_withdraw_btn_x, to_withdraw_btn_y, true /* center */);
+	
 		current_screen = "insertFiat";
 	}
 
-	void showTradeCompleteScreen(const float &amount, const std::string &qrcodeData) {
+	void showTradeCompleteScreen(const float &amount, const std::string &qrcodeData)
+	{
 		clearScreen();
 		const std::string text = getAmountFiatCurrencyString(amount);
 		const int16_t center_x = display.width() / 2;
 		const int16_t text_x = center_x;
 		const int16_t text_y = margin_y;
-		amount_text_bbox = renderText(text, text_x, text_y, true/* center */);
+		amount_text_bbox = renderText(text, text_x, text_y, true /* center */);
 		const int16_t qr_x = center_x;
 		const int16_t qr_y = amount_text_bbox.y + amount_text_bbox.h + margin_y;
 		const int16_t qr_max_w = display.width();
 		const int16_t qr_max_h = display.height() - (qr_y + margin_y);
-		renderQRCode(qrcodeData, qr_x, qr_y, qr_max_w, qr_max_h, true/* center */);
+		renderQRCode(qrcodeData, qr_x, qr_y, qr_max_w, qr_max_h, true /* center */);
 		current_screen = "tradeComplete";
 	}
+
+	void showWelcomeScreen()
+	{
+		clearScreen();
+		const int16_t center_x = display.width() / 2;
+		const int16_t welcome_x = center_x;
+		const int16_t welcome_y = margin_y;
+		welcome_text_bbox = renderText("Welcome", welcome_x, welcome_y, true /* center */);
+		const int16_t to_x = center_x;
+		const int16_t to_y = welcome_text_bbox.y + welcome_text_bbox.h + margin_y;
+
+		to_text_bbox = renderText("to", to_x, to_y, true /* center */);
+		const int16_t bitcoinBar_x = center_x;
+		const int16_t bitcoinBar_y = to_text_bbox.y + to_text_bbox.h + margin_y;
+
+		bitcoin_bar_text_bbox = renderText("Bitcoin Bar", bitcoinBar_x, bitcoinBar_y, true /* center */);
+
+		const int16_t insertCoins_x = center_x;
+		const int16_t insertCoins_y = bitcoin_bar_text_bbox.y + bitcoin_bar_text_bbox.h + margin_y;
+
+		insertCoins_text_bbox = renderText("Insert coin to start", insertCoins_x, insertCoins_y, true /* center */);
+
+		current_screen = "welcome";
+	}
+
+	void showCreditScreen()
+	{
+		clearScreen();
+		const int16_t center_x = display.width() / 2;
+		const int16_t welcome_x = center_x;
+		const int16_t welcome_y = margin_y;
+		welcome_text_bbox = renderText("Project by:", welcome_x, welcome_y, true /* center */);
+		const int16_t to_x = center_x;
+		const int16_t to_y = welcome_text_bbox.y + welcome_text_bbox.h + margin_y;
+
+		to_text_bbox = renderText("Bleskomat", to_x, to_y, true /* center */);
+		const int16_t bitcoinBar_x = center_x;
+		const int16_t bitcoinBar_y = to_text_bbox.y + to_text_bbox.h + margin_y;
+
+		bitcoin_bar_text_bbox = renderText("Build by:", bitcoinBar_x, bitcoinBar_y, true /* center */);
+
+		const int16_t insertCoins_x = center_x;
+		const int16_t insertCoins_y = bitcoin_bar_text_bbox.y + bitcoin_bar_text_bbox.h + margin_y;
+
+		insertCoins_text_bbox = renderText("satoshi-mall.com", insertCoins_x, insertCoins_y, true /* center */);
+
+		current_screen = "credit";
+	}
+
 }
