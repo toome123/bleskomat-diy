@@ -101,14 +101,10 @@ void runAppLoop() {
 		}
 	} else if (currentScreen == "tradeComplete") {
 		inhibitAcceptors();
-		if (button::isPressed() && millis() - tradeCompleteTime > buttonDelay) {
+		if ((button::isPressed() && millis() - tradeCompleteTime > buttonDelay) || (millis() - tradeCompleteTime > 10000)) {
 			creditScreenShowTime = millis();
 			resetAccumulatedValues();
 			screen::showCreditScreen();
-			logger::write("Screen cleared");
-		}else if(millis() - tradeCompleteTime > 10000){//TODO: Move to config
-			resetAccumulatedValues();
-			screen::showWelcomeScreen();
 			logger::write("Screen cleared");
 		}
 	} else if (currentScreen == "credit") {
