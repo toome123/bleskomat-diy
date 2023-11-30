@@ -1,6 +1,8 @@
 #include "main.h"
 
 unsigned int buttonDelay;
+bool creditScreen;
+unsigned int creditScreenShowingTime;
 float amountShown = 0;
 unsigned long tradeCompleteTime = 0;
 unsigned long creditScreenShowTime = 0;
@@ -18,6 +20,8 @@ void setup() {
 	billAcceptor::init();
 	button::init();
 	buttonDelay = config::getUnsignedInt("buttonDelay");
+	creditScreen = config::getBool("creditScreen");
+	creditScreenShowingTime = config::getUnsignedInt("creditScreenShowingTime");
 }
 
 void disinhibitAcceptors() {
@@ -59,6 +63,7 @@ void runAppLoop() {
 	if (currentScreen == "") {
 		disinhibitAcceptors();
 		screen::showWelcomeScreen();
+		logger::write("Show Welcome Screen");
 	}
 	float accumulatedValue = 0;
 	accumulatedValue += coinAcceptor::getAccumulatedValue();
@@ -101,14 +106,20 @@ void runAppLoop() {
 		}
 	} else if (currentScreen == "tradeComplete") {
 		inhibitAcceptors();
-		if ((button::isPressed() && millis() - tradeCompleteTime > buttonDelay) || (millis() - tradeCompleteTime > 10000)) {
+		if (button::isPressed() && millis() - tradeCompleteTime > buttonDelay) {
 			creditScreenShowTime = millis();
 			resetAccumulatedValues();
+
+			if(creditScreen){
 			screen::showCreditScreen();
-			logger::write("Screen cleared");
+			logger::write("Show credit");
+			}else{
+				screen::showWelcomeScreen();
+				logger::write("Screen cleared");
+			}			
 		}
 	} else if (currentScreen == "credit") {
-		if (millis() - creditScreenShowTime > 2000) {//TODO: move to config
+		if (millis() - creditScreenShowTime > creditScreenShowingTime) {
 			screen::showWelcomeScreen();
 			logger::write("Screen cleared");
 		}

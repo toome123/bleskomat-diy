@@ -30,7 +30,9 @@ namespace {
 		{ "buttonDebounce", "100" },
 		{ "tftRotation", "2" },
 		{ "logLevel", "info" },
-		{ "spiffsFormatted", "false" }
+		{ "spiffsFormatted", "false" },
+		{ "creditScreen", "true" },
+		{ "creditScreenShowingTime", "2500" }
 	};
 
 	// https://arduinojson.org/v6/api/dynamicjsondocument/
